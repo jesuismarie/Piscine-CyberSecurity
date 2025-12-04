@@ -20,6 +20,31 @@ def parseArgs() -> argparse.Namespace:
 
 	return spiderParser.parse_args()
 
+def getDomain(url: str) -> str:
+	return urlparse(url).netloc
+
+def normalizeUrl(url: str) -> str:
+	parsed = urlparse(url)
+	cleaned = parsed._replace(fragment="", path=parsed.path.rstrip("/"))
+	return urljoin(url, cleaned.path) if cleaned.path else urljoin(url, "/")
+
+def isValidLink(link: str, base_url: str) -> bool:
+	if not link:
+		return False
+
+	parsed = urlparse(link)
+
+	if parsed.scheme and parsed.scheme not in ("http", "https"):
+		return False
+
+	if parsed._replace(fragment="").geturl() == "":
+		return False
+
+	if getDomain(base_url) != getDomain(link):
+		return False
+
+	return True
+
 def fetchSoup(url: str):
 	try:
 		r = requests.get(url, timeout=5)
@@ -73,7 +98,18 @@ def downloadImage(img_url: str, path: str) -> None:
 	except Exception as e:
 		print(f"Failed to save {img_url}: {e}")
 
-def spider(url: str, path: str, level: int, current_level: int = 0) -> None:
+def spider(url: str, path: str, level: int, current_level: int = 0, visited: set | None = None) -> None:
+	if visited is None:
+		visited = set()
+
+	print(f"Before: {url}")
+	normalized = normalizeUrl(url)
+	
+	if normalized in visited:
+		return
+	visited.add(normalized)
+	print(f"After: {normalized}")
+
 	if current_level > level:
 		return
 
@@ -88,9 +124,12 @@ def spider(url: str, path: str, level: int, current_level: int = 0) -> None:
 			downloadImage(img_url, path)
 
 	for a_tag in soup.find_all('a', href=True):
-		next_url = urljoin(url, a_tag['href'])
-		if next_url.startswith(url):
-			spider(next_url, path, level, current_level + 1)
+		raw_href = a_tag['href'].strip()
+		next_url = urljoin(url, raw_href)
+
+		if isValidLink(next_url, url):
+			print(f"Level: {current_level}")
+			spider(next_url, path, level, current_level + 1, visited)
 
 def main() -> None:
 	args = parseArgs()
@@ -120,7 +159,7 @@ def main() -> None:
 	try:
 		spider(url, path, level)
 	except KeyboardInterrupt:
-		print("Spider stopped by user!")
+		print("\nSpider stopped by user!")
 		sys.exit(0)
 
 if __name__ == '__main__':
