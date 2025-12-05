@@ -13,10 +13,10 @@ def parseArgs() -> argparse.Namespace:
 	spiderParser = argparse.ArgumentParser(
 		usage="./spider.py [-r] [-l N] [-p PATH] URL"
 	)
-	spiderParser.add_argument("url")
-	spiderParser.add_argument("-r", "--recursive", action="store_true")
-	spiderParser.add_argument("-l", "--level", type=int, default=5)
-	spiderParser.add_argument("-p", "--path", type=str, default="./data/")
+	spiderParser.add_argument("url", help="The starting URL to scan for images.")
+	spiderParser.add_argument("-r", "--recursive", action="store_true", help="Enable recursive crawling of pages under the given URL.")
+	spiderParser.add_argument("-l", "--level", type=int, default=5, help="Maximum recursion depth (default: 5). Only used when -r is enabled.")
+	spiderParser.add_argument("-p", "--path", type=str, default="./data/", help="Path where images will be saved (default: ./data/).")
 
 	return spiderParser.parse_args()
 
