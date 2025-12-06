@@ -9,17 +9,31 @@ This project contains two Python programs developed as part of the **Arachnida -
 
 The focus of the project is on web crawling, HTTP requests, file handling, and image metadata analysis, while implementing all core logic manually.
 
+## Getting Started
+
+It is recommended to run this project inside a virtual environment to avoid conflicts between Python packages.
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate   # Linux/macOS
+```
+
+Once the virtual environment is activated, install the required packages:
+
+```bash
+pip install -r requirements.txt
+```
+
 ## Spider
 
-**Arachnida** is a command-line web spider that downloads images from a given URL, optionally following links recursively.
+**Spider** is a command-line web crawler that downloads images from a given URL, optionally following links recursively.
 
 ### Features
 
 * Downloads images with the following extensions: `.jpg`, `.jpeg`, `.png`, `.gif`, `.bmp`.
-* Recursive crawling with configurable depth (default 5).
-* Custom download paths for storing images (default `./data/`).
+* Recursive crawling with configurable depth (default: 5).
+* Custom download path for storing images (default: `./data/`).
 * Prevents revisiting the same URLs.
-* Fully implemented crawling logic; only uses libraries for HTTP requests and HTML parsing.
 
 ### Usage
 
@@ -55,7 +69,9 @@ The focus of the project is on web crawling, HTTP requests, file handling, and i
 * Accepts multiple files as input:
 
 ```bash
-./scorpion.py FILE1 [FILE2 ...]
+./scorpion.py -g                           # With GUI
+# OR
+./scorpion.py [-d | -m] FILE1 [FILE2 ...]  # Terminal mode
 ```
 
 **Bonus features (optional):**
@@ -68,6 +84,8 @@ The focus of the project is on web crawling, HTTP requests, file handling, and i
 * Python 3.8+
 * `requests`
 * `beautifulsoup4`
+* `pillow`
+* `piexif`
 
 ## Project Structure
 
