@@ -102,16 +102,11 @@ def spider(url: str, path: str, level: int, current_level: int = 0, visited: set
 	if visited is None:
 		visited = set()
 
-	print(f"Before: {url}")
 	normalized = normalizeUrl(url)
 	
 	if normalized in visited:
 		return
 	visited.add(normalized)
-	print(f"After: {normalized}")
-
-	if current_level > level:
-		return
 
 	soup = fetchSoup(url)
 	if soup is None:
@@ -123,12 +118,14 @@ def spider(url: str, path: str, level: int, current_level: int = 0, visited: set
 		for img_url in images:
 			downloadImage(img_url, path)
 
+	if current_level >= level:
+		return
+
 	for a_tag in soup.find_all('a', href=True):
 		raw_href = a_tag['href'].strip()
 		next_url = urljoin(url, raw_href)
 
 		if isValidLink(next_url, url):
-			print(f"Level: {current_level}")
 			spider(next_url, path, level, current_level + 1, visited)
 
 def main() -> None:
@@ -139,6 +136,9 @@ def main() -> None:
 	level = args.level
 	path = args.path
 
+	if not recursive:
+		level = 0
+
 	print("---------------------------------------------------------------------")
 	print("URL:", url)
 	print("Recursive:", recursive)
@@ -146,15 +146,11 @@ def main() -> None:
 	print("Path:", path)
 	print("---------------------------------------------------------------------")
 
-	if path != './data':
-		if path[-1] != '/':
-			path += '/'
+	if not path.endswith('/'):
+		path += '/'
 
 	if not os.path.exists(path):
 		os.makedirs(path)
-
-	if not recursive:
-		level = 0
 
 	try:
 		spider(url, path, level)
