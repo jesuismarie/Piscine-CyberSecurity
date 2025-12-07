@@ -2,6 +2,9 @@
 
 import os
 import argparse
+from pathlib import Path
+from datetime import datetime
+from PIL import Image, ExifTags
 
 exts = [".jpg", ".jpeg", ".png", ".gif", ".bmp"]
 
@@ -29,20 +32,75 @@ def isSupportedFile(filepath: str) -> bool:
 	return True
 
 def deleteMetadata(files: list) -> None:
-	print("Delete Metadata")
+	for file in files:
+		try:
+			img = Image.open(file)
+			data = list(img.getdata())
+			image_without_exif = Image.new(img.mode, img.size)
+			image_without_exif.putdata(data)
+			image_without_exif.save(file)
+			print(f"Metadata removed from: {file}")
+		except Exception as e:
+			print(f"Error removing metadata from {file}: {e}")
 
-def modifyMetadata(files: list) -> None:
-	print("Modify Metadata")
+def getExifData(img: Image) -> dict:
+	try:
+		exif_data = img.getexif()
+
+		if exif_data:
+			exif = {}
+			for tag_id, value in exif_data.items():
+				tag_name = ExifTags.TAGS.get(tag_id, tag_id)
+				exif[tag_name] = value
+			return exif
+		else:
+			return None
+	except Exception as e:
+		print(f"Error reading EXIF data: {e}")
+		return None
 
 def printMetadata(files: list) -> None:
-	print("Print Metadata")
+	for file in files:
+		filepath = Path(file)
+
+		print(f"{'-'*70}")
+		print(f"FILE: {filepath.name}")
+		print(f"PATH: {filepath.resolve()}")
+		print(f"{'-'*70}")
+
+		try:
+			img = Image.open(file)
+			exif_info = getExifData(img)
+			stat = filepath.stat()
+			modified_time = datetime.fromtimestamp(stat.st_mtime)
+			created_time = datetime.fromtimestamp(stat.st_ctime)
+
+			print(f"Type       : {img.format or 'Unknown'}")
+			print(f"Size       : {os.path.getsize(file):,} bytes")
+			print(f"Dimensions : {img.width} × {img.height} pixels")
+			print(f"Mode       : {img.mode}")
+			print(f"Modified   : {modified_time.strftime('%Y-%m-%d %H:%M:%S')}")
+			print(f"Created    : {created_time.strftime('%Y-%m-%d %H:%M:%S')}")
+			print("-" * 50)
+			if not exif_info:
+				print("No EXIF metadata found (common for PNG/GIF/BMP or stripped images)")
+				print(f"{'-'*70}")
+				continue
+			print(f"EXIF METADATA FOUND ({len(exif_info)} tags)")
+			print("-" * 50)
+			for tag, value in exif_info.items():
+				print(f"{tag}: {value}")
+		except Exception as e:
+			print(f"Error processing image: {e}")
+
+		print(f"{'-'*70}")
 
 def launchScorpionGUI() -> None:
 	print("Open GUI")
 
 def main() -> None:
 	args = parseArgs()
-	if args.gui and len(args.file) != 0:
+	if args.gui and args.file:
 		print("GUI mode (-g) does not accept file arguments.")
 		return
 
@@ -57,11 +115,11 @@ def main() -> None:
 		return
 
 	if args.delete:
-		deleteMetadata(args.file)
-	elif args.modify:
-		modifyMetadata(args.file)
+		deleteMetadata(valid_files)
+	# elif args.modify:
+		# modifyMetadata(valid_files)
 	else:
-		printMetadata(args.file)
+		printMetadata(valid_files)
 
 if __name__ == '__main__':
 	main()
