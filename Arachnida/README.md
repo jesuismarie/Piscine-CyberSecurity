@@ -69,15 +69,12 @@ pip install -r requirements.txt
 * Accepts multiple files as input:
 
 ```bash
-./scorpion.py -g                           # With GUI
-# OR
-./scorpion.py [-d | -m] FILE1 [FILE2 ...]  # Terminal mode
+./scorpion.py [-d] FILE1 [FILE2 ...]
 ```
 
 **Bonus features (optional):**
 
-* Modify or delete metadata from images.
-* Graphical interface for viewing and managing metadata.
+* Delete metadata from images.
 
 ## Requirements
 
