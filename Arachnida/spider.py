@@ -6,8 +6,27 @@ import requests
 import argparse
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, urljoin
+import random
 
-exts = [".jpg", ".jpeg", ".png", ".gif", ".bmp"]
+exts = [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp"]  # Added .webp as it's common now
+
+USER_AGENTS = [
+	"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
+	"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:131.0) Gecko/20100101 Firefox/131.0",
+	"Mozilla/5.0 (Macintosh; Intel Mac OS X 14_6_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15",
+	"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
+]
+
+def get_headers():
+	ua = random.choice(USER_AGENTS)
+	return {
+		"User-Agent": ua,
+		"Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+		"Accept-Language": "en-US,en;q=0.9",
+		"Accept-Encoding": "gzip, deflate, br",
+		"Connection": "keep-alive",
+		"Upgrade-Insecure-Requests": "1",
+	}
 
 def parseArgs() -> argparse.Namespace:
 	spiderParser = argparse.ArgumentParser(
@@ -46,8 +65,9 @@ def isValidLink(link: str, base_url: str) -> bool:
 	return True
 
 def fetchSoup(url: str):
+	headers = get_headers()
 	try:
-		r = requests.get(url, timeout=5)
+		r = requests.get(url, headers=headers, timeout=10)
 		r.raise_for_status()
 	except Exception as e:
 		print(f"Cannot fetch {url}: {e}")
@@ -65,7 +85,7 @@ def getImageUrls(url: str, soup: BeautifulSoup | None) -> list:
 		return images
 
 	for img in soup.find_all("img"):
-		src = img.get("src")
+		src = img.get("src") or img.get("data-src")
 		if not src:
 			continue
 
@@ -76,14 +96,18 @@ def getImageUrls(url: str, soup: BeautifulSoup | None) -> list:
 	return images
 
 def downloadImage(img_url: str, path: str) -> None:
+	headers = get_headers()
 	try:
-		r = requests.get(img_url, timeout=5)
+		r = requests.get(img_url, headers=headers, timeout=10, stream=True)
 		r.raise_for_status()
 	except Exception as e:
 		print(f"Failed to download {img_url}: {e}")
 		return
 
 	filename = os.path.basename(urlparse(img_url).path)
+	if not filename or '.' not in filename:
+		filename = "image_" + str(hash(img_url)) + ".jpg"
+
 	filepath = os.path.join(path, filename)
 
 	if os.path.exists(filepath):
@@ -103,7 +127,7 @@ def spider(url: str, path: str, level: int, current_level: int = 0, visited: set
 		visited = set()
 
 	normalized = normalizeUrl(url)
-	
+
 	if normalized in visited:
 		return
 	visited.add(normalized)
@@ -128,7 +152,7 @@ def spider(url: str, path: str, level: int, current_level: int = 0, visited: set
 		if isValidLink(next_url, url):
 			spider(next_url, path, level, current_level + 1, visited)
 
-def main() -> None:
+if __name__ == '__main__':
 	args = parseArgs()
 
 	url = args.url
@@ -157,6 +181,3 @@ def main() -> None:
 	except KeyboardInterrupt:
 		print("\nSpider stopped by user!")
 		sys.exit(0)
-
-if __name__ == '__main__':
-	main()
