@@ -1,0 +1,15 @@
+version: "3.8"
+
+services:
+
+  nginx:
+    build: ./nginx
+    image: my_onion_nginx
+    container_name: ft_onion_nginx
+    restart: unless-stopped
+    networks:
+      - onion-net
+
+networks:
+  onion-net:
+    driver: bridge
