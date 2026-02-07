@@ -1,14 +1,13 @@
-FROM debian:bullseye-slim
+FROM debian:bookworm-slim
 
-RUN apt update -y && apt install nginx \
-	&& rm -rf /var/lib/apt/lists/*
+RUN apt update -y && apt install nginx -y \
+	&& apt clean && rm -rf /var/lib/apt/lists/*
 
-COPY nginx/nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-COPY nginx/index.html /var/www/html/index.html
-
-RUN chown -R nginx:nginx /usr/share/nginx/html \
-	&& chmod -R 644 /usr/share/nginx/html/*
+COPY index.html /var/www/html/index.html
 
 RUN chown www-data:www-data /var/www/html/index.html \
 	&& chmod 644 /var/www/html/index.html
+
+CMD ["nginx", "-g", "daemon off;"]
